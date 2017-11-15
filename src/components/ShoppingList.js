@@ -16,3 +16,5 @@ const ShoppingList = ({ list }) => {
     </div>
   )
 }
+
+export default ShoppingList
