@@ -6,7 +6,7 @@ const trim = (str) => {
     : str
 }
 
-export default FoodList = ({ food, onSelect }) => {
+const FoodList = ({ food, onSelect }) => {
   if (food.length === 0) {
     return <p>Your search has 0 results.</p>
   }
@@ -24,3 +24,5 @@ export default FoodList = ({ food, onSelect }) => {
     </ul>
   )
 }
+
+export default FoodList
