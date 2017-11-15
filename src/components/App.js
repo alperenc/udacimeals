@@ -1,12 +1,59 @@
 import React, { Component } from 'react'
 import CalendarIcon from 'react-icons/lib/fa/calendar-plus-o'
+import ArrowRightIcon from 'react-icons/lib/fa/arrow-circle-right'
+import Modal from 'react-modal'
+import Loading from 'react-loading'
 import { connect } from 'react-redux'
 import { addRecipe, removeFromCalendar } from '../actions'
 import { capitalize } from '../utils/helpers'
+import { fetchRecipes } from '../utils/api'
+import FoodList from './FoodList'
 
 class App extends Component {
+  state = {
+    foodModalOpen: false,
+    loadingFood: false,
+    meal: null,
+    day: null,
+    food: null,
+  }
+
+  openFoodModal = ({ meal, day }) => {
+    this.setState(() => ({
+      foodModalOpen: true,
+      meal,
+      day,
+    }))
+  }
+
+  closeFoodModal = () => {
+    this.setState(() => ({
+      foodModalOpen: false,
+      meal: null,
+      day: null,
+      food: null,
+    }))
+  }
+
+  searcFood = (e) => {
+    if (!this.input.value) {
+      return
+    }
+
+    e.preventDefault()
+
+    this.setState(() => ({ loadingFood: true }))
+
+    fetchRecipes(this.input.value)
+      .then((food) => this.setState(() => ({
+        food,
+        loadingFood: false,
+      })))
+  }
+
   render() {
-    const { calendar, remove } = this.props
+    const { foodModalOpen, loadingFood, food } = this.state
+    const { calendar, remove, selectRecipe } = this.props
     const mealOrder = ['breakfast', 'lunch', 'dinner']
 
     return (
@@ -30,12 +77,12 @@ class App extends Component {
                   <li key={meal} className='meal'>
                     {meals[meal]
                       ? <div className='food-item'>
-                          <img src={meals[meal].image} alt={meals[meal].label} />
-                          <button onClick={() => remove({ meal, day })}>Clear</button>
-                        </div>
-                      : <button className='icon-btn'>
-                          <CalendarIcon size={30} />
-                        </button>
+                        <img src={meals[meal].image} alt={meals[meal].label} />
+                        <button onClick={() => remove({ meal, day })}>Clear</button>
+                      </div>
+                      : <button onClick={() => this.openFoodModal({ meal, day })} className='icon-btn'>
+                        <CalendarIcon size={30} />
+                      </button>
                     }
                   </li>
                 ))}
@@ -43,8 +90,46 @@ class App extends Component {
             ))}
           </div>
         </div>
-      </div >
-    );
+
+        <Modal
+          className='modal'
+          overlayClassName='overlay'
+          isOpen={foodModalOpen}
+          onRequestClos={this.closeFoodModal}
+          contentLabel='Modal'>
+
+          <div>
+            {loadingFood === true
+              ? <Loading delay={200} type='spin' color='#222' className='loading' />
+              : <div className='search-container'>
+                  <h3 className='subheader'>
+                    Find a meal for {capitalize(this.state.day)} {this.state.meal}.
+                  </h3>
+                <div className='search'>
+                  <input
+                    className='food-input'
+                    type='text'
+                    placeholder='Search Foods'
+                    ref={(input) => this.input = input} />
+                  <button
+                    className='icon-btn'
+                    onClick={this.searcFood}>
+                    <ArrowRightIcon size={30} />
+                  </button>
+                </div>
+                {food !== null && (
+                  <FoodList
+                    food={food}
+                    onSelect={(recipe) => {
+                      selectRecipe({ recipe, day: this.state.day, meal: this.state.meal })
+                      this.closeFoodModal()
+                    }} />
+                )}
+              </div>}
+          </div>
+        </Modal>
+      </div>
+    )
   }
 }
 
